@@ -17,6 +17,9 @@ from app.middlewares import WhitelistMiddleware
 
 # Заливка большого файла в Telegram занимает минуты — дефолтных 60 с мало.
 UPLOAD_TIMEOUT_SEC = 900
+# Проверка связи при старте: если сети нет, пакеты дропаются молча и
+# ядро досылает SYN ~2 минуты. Столько ждать диагноза незачем.
+STARTUP_TIMEOUT_SEC = 10
 
 # Ошибки aiohttp_socks — плоские наследники Exception, у них нет общей базы
 # с aiohttp.ClientError, поэтому aiogram не оборачивает их в
@@ -71,7 +74,7 @@ async def main() -> None:
     dispatcher = build_dispatcher()
     try:
         try:
-            me = await bot.get_me()
+            me = await bot.get_me(request_timeout=STARTUP_TIMEOUT_SEC)
         except NETWORK_ERRORS as exc:
             _log_no_network(logger, settings, exc)
             raise SystemExit(1) from None
