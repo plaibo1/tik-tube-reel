@@ -49,9 +49,15 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    logger = logging.getLogger("app")
+    settings = get_settings()
+    logger.info("config: %s", settings.describe())
+
     bot = build_bot()
     dispatcher = build_dispatcher()
     try:
+        me = await bot.get_me()
+        logger.info("bot: @%s (id=%s), начинаю polling", me.username, me.id)
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(bot)
     finally:

@@ -2,8 +2,20 @@ services:
   bot:
     build: .
     restart: unless-stopped
-    env_file: .env
+    # Переменные перечислены явно, а не через env_file: .env.
+    # Причина: .env лежит в .gitignore и на сервере его нет, а панели вроде
+    # Dokploy используют свои переменные для интерполяции ${...} в этом файле,
+    # но НЕ прокидывают их в контейнер сами. Локально ${...} подхватывается
+    # из .env автоматически — docker compose читает его для интерполяции.
     environment:
+      BOT_TOKEN: ${BOT_TOKEN:?BOT_TOKEN не задан}
+      ALLOWED_USER_IDS: ${ALLOWED_USER_IDS:-}
+      MAX_FILESIZE_MB: ${MAX_FILESIZE_MB:-48}
+      MAX_DURATION_SEC: ${MAX_DURATION_SEC:-10800}
+      MAX_HEIGHT: ${MAX_HEIGHT:-1080}
+      MAX_CONCURRENT_DOWNLOADS: ${MAX_CONCURRENT_DOWNLOADS:-2}
+      TG_API_BASE: ${TG_API_BASE:-}
+      PROXY: ${PROXY:-}
       DOWNLOAD_DIR: /data/downloads
       COOKIES_DIR: /data/cookies
     volumes:

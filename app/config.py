@@ -4,14 +4,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    bot_token: str
+    bot_token: str = Field(min_length=1)
     # NoDecode обязателен: без него pydantic-settings пытается json.loads
     # значение из env и падает на списке через запятую.
     allowed_user_ids: Annotated[set[int], NoDecode] = Field(default_factory=set)
@@ -48,10 +48,36 @@ class Settings(BaseSettings):
     def max_filesize_bytes(self) -> int:
         return self.max_filesize_mb * 1024 * 1024
 
+    def describe(self) -> str:
+        """Строка для лога при старте: что бот реально увидел. Без секретов."""
+        cookies = sorted(p.name for p in self.cookies_dir.glob("*.txt"))
+        return (
+            f"token={'есть' if self.bot_token else 'НЕТ'} "
+            f"whitelist={sorted(self.allowed_user_ids) or 'ПУСТО (бот открыт всем)'} "
+            f"limit={self.max_filesize_mb}MB "
+            f"max_height={self.max_height}p "
+            f"api={self.tg_api_base or 'api.telegram.org'} "
+            f"proxy={'есть' if self.proxy else 'нет'} "
+            f"cookies={cookies or 'нет'} "
+            f"downloads={self.download_dir}"
+        )
+
 
 @lru_cache
 def get_settings() -> Settings:
-    settings = Settings()  # type: ignore[call-arg]
+    try:
+        settings = Settings()  # type: ignore[call-arg]
+    except ValidationError as exc:
+        missing = sorted({str(error["loc"][0]).upper() for error in exc.errors()})
+        raise SystemExit(
+            "Не заданы переменные окружения: "
+            + ", ".join(missing)
+            + ".\nЛокально: cp .env.example .env и заполни."
+            "\nВ Docker/Dokploy: переменные должны быть перечислены в блоке"
+            " environment: в docker-compose.yml — панель прокидывает свои"
+            " значения только в интерполяцию ${...}, а не в контейнер."
+        ) from exc
+
     settings.download_dir.mkdir(parents=True, exist_ok=True)
     settings.cookies_dir.mkdir(parents=True, exist_ok=True)
     return settings
