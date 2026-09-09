@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # Официальный Bot API: не больше 50 МБ на отправку файла ботом.
     # С локальным Bot API server (--local) лимит 2000 МБ — тогда ставим MAX_FILESIZE_MB=1900.
     tg_api_base: str | None = None
+    # Прокси для самого Bot API (socks5://, socks4://, http://).
+    # Нужен, когда сервер не может открыть соединение до api.telegram.org.
+    tg_proxy: str | None = None
     max_filesize_mb: int = 48
 
     download_dir: Path = Path("./downloads")
@@ -45,6 +48,11 @@ class Settings(BaseSettings):
         return value
 
     @property
+    def bot_api_proxy(self) -> str | None:
+        """Прокси для Bot API: отдельный TG_PROXY, иначе общий PROXY."""
+        return self.tg_proxy or self.proxy
+
+    @property
     def max_filesize_bytes(self) -> int:
         return self.max_filesize_mb * 1024 * 1024
 
@@ -57,7 +65,8 @@ class Settings(BaseSettings):
             f"limit={self.max_filesize_mb}MB "
             f"max_height={self.max_height}p "
             f"api={self.tg_api_base or 'api.telegram.org'} "
-            f"proxy={'есть' if self.proxy else 'нет'} "
+            f"proxy_ytdlp={'есть' if self.proxy else 'нет'} "
+            f"proxy_telegram={'есть' if self.bot_api_proxy else 'нет'} "
             f"cookies={cookies or 'нет'} "
             f"downloads={self.download_dir}"
         )

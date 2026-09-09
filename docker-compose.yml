@@ -15,6 +15,7 @@ services:
       MAX_HEIGHT: ${MAX_HEIGHT:-1080}
       MAX_CONCURRENT_DOWNLOADS: ${MAX_CONCURRENT_DOWNLOADS:-2}
       TG_API_BASE: ${TG_API_BASE:-}
+      TG_PROXY: ${TG_PROXY:-}
       PROXY: ${PROXY:-}
       DOWNLOAD_DIR: /data/downloads
       COOKIES_DIR: /data/cookies
