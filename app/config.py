@@ -49,8 +49,16 @@ class Settings(BaseSettings):
 
     @property
     def bot_api_proxy(self) -> str | None:
-        """Прокси для Bot API: отдельный TG_PROXY, иначе общий PROXY."""
-        return self.tg_proxy or self.proxy
+        """Прокси для Bot API: отдельный TG_PROXY, иначе общий PROXY.
+
+        socks5h:// приводим к socks5://: python_socks такую схему отвергает,
+        а удалённый DNS aiogram включает сам (rdns=True). yt-dlp, наоборот,
+        socks5h понимает — поэтому нормализуем только здесь.
+        """
+        proxy = self.tg_proxy or self.proxy
+        if proxy and proxy.startswith("socks5h://"):
+            return "socks5://" + proxy.removeprefix("socks5h://")
+        return proxy
 
     @property
     def max_filesize_bytes(self) -> int:
