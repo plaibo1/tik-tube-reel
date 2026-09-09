@@ -1,0 +1,16 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DOWNLOAD_DIR: /data/downloads
+      COOKIES_DIR: /data/cookies
+    volumes:
+      - ./cookies:/data/cookies:ro
+      - downloads:/data/downloads
+    # yt-dlp ломается каждые пару недель, когда YouTube меняет отдачу.
+    # Пересобирай образ (docker compose build --pull bot) — pip подтянет свежий.
+
+volumes:
+  downloads:
